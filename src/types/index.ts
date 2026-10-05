@@ -7,6 +7,8 @@ export interface UserProfile {
   role: UserRole;
   studentId: string;
   avatarUrl?: string;
+  totalStudySeconds?: number;
+  completedSessionsCount?: number;
   createdAt: string; // ISO string or Timestamp
 }
 
@@ -91,7 +93,13 @@ export interface SeatDaySlots {
   lastUpdated: string;
 }
 
-export type SessionStatus = 'active' | 'paused' | 'ended';
+export type SessionStatus = 'active' | 'break' | 'paused' | 'ended';
+
+export interface SessionBreakRecord {
+  startTime: string; // ISO string
+  endTime: string | null; // ISO string or null if currently active
+  durationSeconds: number;
+}
 
 export interface StudySession {
   id: string;
@@ -104,6 +112,7 @@ export interface StudySession {
   studyDurationSeconds: number;
   breakDurationSeconds: number;
   pomodoroCyclesCompleted: number;
+  breaks?: SessionBreakRecord[];
 }
 
 export type NotificationType =
