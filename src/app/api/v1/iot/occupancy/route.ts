@@ -72,8 +72,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'INVALID_SIGNATURE', message: 'HMAC signature verification failed.' }, { status: 401 });
     }
 
-    // 6. Execute Transactional Temporal Smoothing & State Update
+    const tickId = request.headers.get('X-Tick-ID') || body.tickId;
+    const source = body.source || 'hardware';
+
+    // 6. Execute Transactional Temporal Smoothing & State Update with Idempotency
     const result = await adminDb.runTransaction(async (transaction) => {
+      // Idempotency: Check Processed Ticks Collection
+      if (tickId) {
+        const tickRef = adminDb.collection('processedTicks').doc(tickId);
+        const tickDoc = await transaction.get(tickRef);
+        if (tickDoc.exists) {
+          return {
+            idempotent: true,
+            tickId,
+            seatId: assignedSeatId,
+            message: `Tick '${tickId}' has already been processed (idempotent no-op).`,
+          };
+        }
+        transaction.set(tickRef, {
+          tickId,
+          deviceId,
+          seatId: assignedSeatId,
+          occupied,
+          confidence,
+          source,
+          timestamp: timestampIso,
+          processedAt: serverNowIso,
+        });
+      }
+
       // Replay Defense: Check Nonce Cache
       const nonceRef = adminDb.collection('seenNonces').doc(nonce);
       const nonceDoc = await transaction.get(nonceRef);
@@ -90,6 +117,8 @@ export async function POST(request: Request) {
       // Apply Temporal Smoothing moving average
       const smoothedState = computeTemporalSmoothing(currentHwState, occupied, confidence, serverNowIso, 3);
       smoothedState.seatId = assignedSeatId;
+      smoothedState.source = source;
+      if (tickId) smoothedState.lastTickId = tickId;
 
       // Update Hardware State Document
       transaction.set(hwStateRef, smoothedState);
@@ -110,7 +139,8 @@ export async function POST(request: Request) {
         smoothedOccupied: smoothedState.occupied,
         confidence: smoothedState.smoothedConfidence,
         timestamp: serverNowIso,
-        source: 'hardware',
+        source,
+        tickId: tickId || null,
       });
 
       return {
@@ -119,12 +149,15 @@ export async function POST(request: Request) {
         confidence: smoothedState.smoothedConfidence,
         consecutiveFrames: smoothedState.consecutiveFrameCount,
         lastUpdate: serverNowIso,
+        source,
+        tickId: tickId || null,
+        idempotent: false,
       };
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Telemetry ingested and state updated.',
+      message: result.idempotent ? 'Idempotent tick acknowledged without duplicate mutation.' : 'Telemetry ingested and state updated.',
       data: result,
     });
   } catch (err: unknown) {

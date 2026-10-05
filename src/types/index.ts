@@ -161,6 +161,8 @@ export interface HardwareState {
   smoothedConfidence: number;
   lastUpdate: string;
   consecutiveFrameCount: number;
+  source?: 'hardware' | 'simulation';
+  lastTickId?: string;
 }
 
 export interface SystemConfig {
@@ -175,10 +177,31 @@ export interface SystemConfig {
   simulationActive: boolean;
 }
 
+export type SimulationScenario =
+  | 'PEAK_AFTERNOON'
+  | 'QUIET_MORNING'
+  | 'EXAM_WEEK'
+  | 'RANDOM_WALK'
+  | 'MANUAL_INJECTION';
+
+export interface ProcessedTickRecord {
+  tickId: string;
+  deviceId: string;
+  seatId?: string;
+  occupied?: boolean;
+  confidence?: number;
+  scenario?: SimulationScenario;
+  timestamp: string;
+  processedAt: string;
+}
+
 export interface SimulationState {
-  activeScenario: 'PEAK_AFTERNOON' | 'QUIET_MORNING' | 'EXAM_WEEK';
+  activeScenario: SimulationScenario;
+  isRunning: boolean;
   tickIntervalSeconds: number;
-  lastTickTime: string;
+  lastTickId?: string;
+  lastTickTime?: string;
+  processedTicksCount: number;
   seedVersion: string;
 }
 

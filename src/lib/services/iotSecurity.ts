@@ -8,6 +8,8 @@ export interface IoTTelemetryPayload {
   occupied: boolean;
   confidence: number;
   rawFrameCount?: number;
+  tickId?: string;
+  source?: 'hardware' | 'simulation';
 }
 
 /**

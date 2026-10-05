@@ -40,8 +40,10 @@ import StudentUserManagement from '@/components/admin/StudentUserManagement';
 import IoTDeviceMonitor from '@/components/admin/IoTDeviceMonitor';
 import AuditLogViewer from '@/components/admin/AuditLogViewer';
 import SystemConfigEditor from '@/components/admin/SystemConfigEditor';
+import { SimulationController } from '@/components/admin/SimulationController';
+import { Sparkles } from 'lucide-react';
 
-type AdminTab = 'overview' | 'reservations' | 'users' | 'iot' | 'audit' | 'settings';
+type AdminTab = 'overview' | 'simulation' | 'reservations' | 'users' | 'iot' | 'audit' | 'settings';
 
 export default function AdminDashboardPage() {
   const { profile, loading: authLoading } = useAuth();
@@ -172,9 +174,10 @@ export default function AdminDashboardPage() {
 
   const navTabs: { id: AdminTab; label: string; icon: React.ElementType }[] = [
     { id: 'overview', label: 'Overview & Seats', icon: LayoutDashboard },
+    { id: 'simulation', label: 'IoT Simulation', icon: Sparkles },
     { id: 'reservations', label: 'Reservations', icon: Calendar },
     { id: 'users', label: 'User Directory', icon: Users },
-    { id: 'iot', label: 'IoT & Telemetry', icon: Cpu },
+    { id: 'iot', label: 'IoT Devices', icon: Cpu },
     { id: 'audit', label: 'Audit Logs', icon: FileText },
     { id: 'settings', label: 'System Rules', icon: Sliders },
   ];
@@ -250,6 +253,14 @@ export default function AdminDashboardPage() {
               hardwareStates={hardwareStates}
               reservations={reservations}
               sessions={sessions}
+            />
+          )}
+
+          {activeTab === 'simulation' && (
+            <SimulationController
+              seats={seats}
+              hardwareStates={hardwareStates}
+              devices={devices}
             />
           )}
 

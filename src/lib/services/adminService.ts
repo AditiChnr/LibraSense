@@ -186,3 +186,76 @@ export async function updateSystemConfig(config: Partial<SystemConfig>): Promise
   }
   return data.config;
 }
+
+// 3. Simulation Control Helpers
+export interface SimulationTickPayload {
+  seatId: string;
+  occupied: boolean;
+  confidence?: number;
+  tickId?: string;
+  scenario?: string;
+  autoSmooth?: boolean;
+}
+
+export interface SimulationTickResponse {
+  success: boolean;
+  idempotent: boolean;
+  tickId: string;
+  seatId: string;
+  occupied?: boolean;
+  confidence?: number;
+  message: string;
+}
+
+export async function triggerSimulationTick(
+  payload: SimulationTickPayload
+): Promise<SimulationTickResponse> {
+  const headers = await getAuthHeaders();
+  const res = await fetch('/api/v1/admin/simulation/tick', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || 'Simulation tick execution failed.');
+  }
+  return data;
+}
+
+export async function resetSimulationState(): Promise<{ success: boolean; resetCount: number; message: string }> {
+  const headers = await getAuthHeaders();
+  const res = await fetch('/api/v1/admin/simulation/reset', {
+    method: 'POST',
+    headers,
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || 'Failed to reset simulation states.');
+  }
+  return data;
+}
+
+export async function fetchSimulationStatus(): Promise<{
+  success: boolean;
+  totalProcessedTicks: number;
+  simulatedSeatsCount: number;
+  occupiedSimulatedCount: number;
+  ticks: Array<{
+    tickId: string;
+    seatId: string;
+    occupied: boolean;
+    confidence: number;
+    scenario: string;
+    timestamp: string;
+  }>;
+}> {
+  const headers = await getAuthHeaders();
+  const res = await fetch('/api/v1/admin/simulation/status', { headers });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || 'Failed to fetch simulation status.');
+  }
+  return data;
+}
+
