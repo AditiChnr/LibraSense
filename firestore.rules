@@ -1,0 +1,128 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'admin' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    // 1. User Profiles & Directory
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      // Students can create their profile at registration or update non-role fields
+      allow create: if isAuthenticated() && isOwner(userId) && request.resource.data.role == 'student';
+      allow update: if isAuthenticated() && (
+        (isOwner(userId) && request.resource.data.role == resource.data.role) ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 2. Student ID Registry (Enforces 1:1 mapping)
+    match /studentIds/{studentId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Server-managed via Admin SDK
+    }
+
+    // 3. Seats & Physical Inventory
+    match /seats/{seatId} {
+      allow read: if true; // Public read for map & layout inspection
+      allow write: if isAdmin(); // Only administrators can modify seat inventory
+
+      match /slots/{date} {
+        allow read: if true; // Real-time seat slot availability is public
+        allow write: if false; // Slot locking strictly managed by server transactions
+      }
+    }
+
+    // 4. Floors & Library Metadata
+    match /floors/{floorId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 5. Reservations (Server-Authoritative)
+    match /reservations/{reservationId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+      allow write: if false; // All creation, cancellation & check-in mutations must go through API transactions
+    }
+
+    // 6. Study Sessions & Pomodoro Timers (Server-Authoritative)
+    match /sessions/{sessionId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+      allow write: if false; // Session timing & breaks strictly managed by server transactions
+    }
+
+    // 7. Check-in Challenges (Cryptographic Single-Use Tokens)
+    match /checkinChallenges/{challengeId} {
+      allow read, write: if false; // Server-only via Admin SDK
+    }
+
+    // 8. Hardware Telemetry & Sensor States
+    match /hardwareStates/{seatId} {
+      allow read: if true; // Real-time sensor state readable for floor map visualization
+      allow write: if false; // Direct sensor injection blocked; must pass through signed IoT API
+    }
+
+    // 9. IoT Devices Management
+    match /devices/{deviceId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // 10. Processed Ticks & Nonce Defense Caches
+    match /processedTicks/{tickId} {
+      allow read, write: if false; // Server-internal idempotency collection
+    }
+
+    match /seenNonces/{nonce} {
+      allow read, write: if false; // Server-internal replay protection cache
+    }
+
+    match /occupancyLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // Immutable append-only via server
+    }
+
+    // 11. System Configuration & Rules
+    match /systemSettings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // 12. In-App Notifications
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow create, delete: if false; // Server Admin SDK only
+    }
+
+    // 13. Audit Logs (Immutable)
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // Client writes strictly forbidden
+    }
+
+    // Default Fallback: Block all unmapped paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
