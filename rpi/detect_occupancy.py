@@ -62,8 +62,8 @@ def parse_arguments():
     parser.add_argument(
         "--threshold",
         type=float,
-        default=0.50,
-        help="Minimum confidence threshold for occupancy detection (default: 0.50)"
+        default=float(os.getenv("CONFIDENCE_THRESHOLD", "0.80")),
+        help="Minimum confidence threshold for occupancy detection (default: 0.80 or env CONFIDENCE_THRESHOLD)"
     )
     return parser.parse_args()
 
@@ -86,7 +86,7 @@ def initialize_detectors():
     return hog, face_cascade
 
 
-def detect_occupancy_in_frame(frame, hog, face_cascade):
+def detect_occupancy_in_frame(frame, hog, face_cascade, threshold: float = 0.80):
     """
     Evaluates presence of a person or student in front of the desk/camera.
     Returns: (is_occupied: bool, confidence: float, detections_boxes: list)
@@ -128,7 +128,7 @@ def detect_occupancy_in_frame(frame, hog, face_cascade):
             for (fx, fy, fw, fh) in faces:
                 detected_boxes.append((fx, fy, fw, fh, "Face"))
 
-    if len(detected_boxes) > 0 and max_confidence >= 0.50:
+    if len(detected_boxes) > 0 and max_confidence >= threshold:
         return True, max_confidence, detected_boxes
 
     return False, 0.95, []
@@ -227,7 +227,9 @@ def main():
                 time.sleep(1.0)
                 continue
 
-            is_occupied, confidence, boxes = detect_occupancy_in_frame(frame, hog, face_cascade)
+            is_occupied, confidence, boxes = detect_occupancy_in_frame(
+                frame, hog, face_cascade, threshold=args.threshold
+            )
 
             current_time = time.time()
             if (current_time - last_transmit_time) >= args.interval:
