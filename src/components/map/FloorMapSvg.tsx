@@ -106,9 +106,18 @@ export default function FloorMapSvg({
           return (
             <g
               key={seat.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`Seat ${seat.seatNumber}, Status: ${state.replace(/_/g, ' ')}, Zone: ${seat.zone}`}
               transform={transform}
               onClick={() => onSelectSeat(seat)}
-              className="cursor-pointer transition-transform duration-200 hover:scale-105"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelectSeat(seat);
+                }
+              }}
+              className="cursor-pointer transition-transform duration-200 hover:scale-105 focus:outline-none"
             >
               {/* Seat Container Box */}
               <rect

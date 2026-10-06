@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, MapPin, Calendar, QrCode } from 'lucide-react';
+import { LayoutDashboard, MapPin, Calendar, QrCode, Timer, BarChart2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function BottomNav() {
@@ -13,7 +13,9 @@ export default function BottomNav() {
     { name: 'Home', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Map', href: '/map', icon: MapPin },
     { name: 'Bookings', href: '/reservations', icon: Calendar },
-    { name: 'Scan QR', href: '/scan', icon: QrCode },
+    { name: 'Scan', href: '/scan', icon: QrCode },
+    { name: 'Session', href: '/session', icon: Timer },
+    { name: 'Stats', href: '/analytics', icon: BarChart2 },
   ];
 
   return (

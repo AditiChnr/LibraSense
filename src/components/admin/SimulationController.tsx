@@ -44,7 +44,7 @@ interface TickAuditItem {
   status: 'SUCCESS' | 'IDEMPOTENT_SKIPPED' | 'ERROR';
 }
 
-export function SimulationController({ seats, hardwareStates, devices }: SimulationControllerProps) {
+export function SimulationController({ seats, hardwareStates }: SimulationControllerProps) {
   // Manual Ingestion State
   const [selectedSeatId, setSelectedSeatId] = useState<string>(seats[0]?.id || 'A01');
   const [targetOccupied, setTargetOccupied] = useState<boolean>(true);
@@ -325,7 +325,6 @@ export function SimulationController({ seats, hardwareStates, devices }: Simulat
   const simStatesList = Object.values(hardwareStates);
   const simulatedCount = simStatesList.filter((s) => s.source === 'simulation').length;
   const occupiedSimCount = simStatesList.filter((s) => s.source === 'simulation' && s.occupied).length;
-  const simDevice = devices.find((d) => d.id === 'dev_rpi_01');
 
   return (
     <div className="space-y-6">
@@ -340,7 +339,10 @@ export function SimulationController({ seats, hardwareStates, devices }: Simulat
               <h3 className="text-base font-semibold text-white">Hardware-Independent Simulation Controller</h3>
               <span className="px-2 py-0.5 text-xs font-mono rounded bg-[#38D9C5]/10 text-[#38D9C5] border border-[#38D9C5]/30 flex items-center gap-1">
                 <Radio className="w-3 h-3 animate-pulse" />
-                {simDevice?.status ? `EDGE DAEMON (${simDevice.status})` : 'SIMULATOR READY'}
+                SIMULATED DATA MODE
+              </span>
+              <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-[#F5B942]/10 text-[#F5B942] border border-[#F5B942]/30">
+                PHYSICAL EDGE HARDWARE: PENDING
               </span>
             </div>
             <p className="text-xs text-[#8B95A7] mt-0.5">
