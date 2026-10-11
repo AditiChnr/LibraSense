@@ -55,17 +55,13 @@ service cloud.firestore {
 
     // 5. Reservations (Server-Authoritative)
     match /reservations/{reservationId} {
-      allow read: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid || isAdmin()
-      );
+      allow read: if isAuthenticated();
       allow write: if false; // All creation, cancellation & check-in mutations must go through API transactions
     }
 
     // 6. Study Sessions & Pomodoro Timers (Server-Authoritative)
     match /sessions/{sessionId} {
-      allow read: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid || isAdmin()
-      );
+      allow read: if isAuthenticated();
       allow write: if false; // Session timing & breaks strictly managed by server transactions
     }
 
