@@ -7,7 +7,7 @@ import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestor
 import { db } from '@/lib/firebase/client';
 import { Reservation, Seat } from '@/types';
 import ReservationCard from '@/components/reservations/ReservationCard';
-import ReservationModal from '@/components/reservations/ReservationModal';
+import NewReservationFlow from '@/components/reservations/NewReservationFlow';
 import { Calendar, Plus, Clock, RefreshCw, AlertCircle, Inbox } from 'lucide-react';
 
 function ReservationsContent() {
@@ -173,7 +173,7 @@ function ReservationsContent() {
       )}
 
       {/* Create Reservation Modal */}
-      <ReservationModal
+      <NewReservationFlow
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         seats={seats}
